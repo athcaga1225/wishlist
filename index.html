@@ -34,25 +34,26 @@
     select { appearance: none; -webkit-appearance: none; padding: 12px 36px 12px 12px; background-color: #f2f2f2; border: none; outline: none; font-size: 14px; color: var(--text-main); border-radius: 4px; cursor: pointer; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; }
     .btn-submit { grid-column: 1 / -1; background: var(--twice-gradient); color: #FFFFFF; border: none; padding: 16px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 4px; transition: opacity 0.2s; }
     .btn-submit:hover { opacity: 0.85; }
-    .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 5px; flex-grow: 1; }
     
-    /* 修正手機版排版 */
+    /* 列表與兩欄設定 */
+    .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 5px; flex-grow: 1; }
     @media (max-width: 650px) { .form-grid { grid-template-columns: 1fr; } .list-panel { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
-    @media (max-width: 480px) { .list-panel { grid-template-columns: 1fr; } } /* 新增：超窄螢幕改為單欄 */
     
     .item-card { position: relative; background-color: var(--panel-bg); padding: 16px; display: flex; flex-direction: column; border-radius: 8px; box-sizing: border-box; height: fit-content; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .sortable-ghost { opacity: 0.4; background-color: #EAEAEA; transform: scale(0.98); }
-    .btn-edit-dots { position: absolute; top: 24px; right: 24px; width: 32px; height: 32px; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 10; opacity: 0; transition: opacity 0.2s; }
-    .item-card:hover .btn-edit-dots { opacity: 1; }
-    .btn-edit-dots svg { width: 16px; height: 16px; stroke: var(--text-main); fill: none; }
     .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
+    
+    /* 品名限制為一行 */
     .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
     .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
+    
     .tag { position: absolute; top: 25px; left: 25px; padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; z-index: 10; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
     .tag-low { background-color: var(--priority-low); }
+
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
     .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
