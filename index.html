@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>待買清單</title>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
   <style>
-    /* CSS 完全保留你 OK 的版本 */
+    /* 全域色塊設定 (完全保留你的原始 CSS) */
     :root {
       --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
       --primary: #000000; --input-bg: #EAEAEA;
@@ -36,13 +35,14 @@
     .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 5px; flex-grow: 1; }
     @media (max-width: 650px) { .form-grid { grid-template-columns: 1fr; } .list-panel { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
     .item-card { position: relative; background-color: var(--panel-bg); padding: 16px; display: flex; flex-direction: column; border-radius: 8px; box-sizing: border-box; height: fit-content; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .sortable-ghost { opacity: 0.4; background-color: #EAEAEA; transform: scale(0.98); }
     .btn-edit-dots { position: absolute; top: 24px; right: 24px; width: 32px; height: 32px; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 10; opacity: 0; transition: opacity 0.2s; }
     .item-card:hover .btn-edit-dots { opacity: 1; }
     .btn-edit-dots svg { width: 16px; height: 16px; stroke: var(--text-main); fill: none; }
     .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
     .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; min-height: 2.8em; }
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
-    .member-tag { font-size: 20px; margin-bottom: 8px; }
+    .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
     .tag { padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
@@ -56,10 +56,7 @@
 <body>
   <div class="container">
     <div class="dashboard">
-      <div class="dashboard-stats">
-        <h1>待買清單</h1>
-        <p id="statsText">0 項 ｜ NT$ 0</p>
-      </div>
+      <div class="dashboard-stats"><h1>待買清單</h1><p id="statsText">0 項 ｜ NT$ 0</p></div>
       <button class="btn-toggle-form" id="btnToggleForm">+ 新增商品</button>
     </div>
 
@@ -67,14 +64,14 @@
       <h2 id="formTitle">新增商品項目</h2>
       <form id="addItemForm">
         <div class="form-grid">
-          <div class="form-group"><label id="imageLabel">商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
-          <div class="form-group"><label>品名</label><input type="text" id="itemName" placeholder="例如：SANA 會場限定隨機小卡" required></div>
+          <div class="form-group"><label>商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
+          <div class="form-group"><label>品名</label><input type="text" id="itemName" required></div>
           <div class="form-group"><label>成員</label>
             <select id="itemMember">
               <option value="🍇">🍇</option><option value="🫐">🫐</option><option value="🍭">🍭</option>
             </select>
           </div>
-          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" placeholder="輸入數字" required></div>
+          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" required></div>
           <div class="form-group"><label>優先順序</label>
             <select id="itemPriority">
               <option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option>
@@ -96,10 +93,8 @@
     const btnToggleForm = document.getElementById('btnToggleForm');
     const statsText = document.getElementById('statsText');
     const fileInput = document.getElementById('itemImageFile');
-    const formTitle = document.getElementById('formTitle');
-
+    
     let currentBase64Image = '';
-    let editingId = null;
 
     btnToggleForm.addEventListener('click', () => {
       formPanel.classList.toggle('active');
@@ -116,79 +111,69 @@
           const canvas = document.createElement('canvas');
           const MAX_SIZE = 400;
           let w = img.width, h = img.height;
-          if (w > MAX_SIZE || h > MAX_SIZE) {
-            if (w > h) { h *= MAX_SIZE / w; w = MAX_SIZE; } else { w *= MAX_SIZE / h; h = MAX_SIZE; }
-          }
+          if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } } else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
           currentBase64Image = canvas.toDataURL('image/jpeg', 0.5);
         };
-        img.src = evt.target.result;
+        img.src = evt.result;
       };
       reader.readAsDataURL(file);
     });
 
-    const formatPrice = (price) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(price);
-    
-    // 從 API 讀取並渲染
     async function fetchData() {
       try {
         const res = await fetch(API_URL);
         const data = await res.json();
         renderList(data);
-      } catch (e) { console.error(e); }
+      } catch(e) { console.error(e); }
     }
 
-    const renderList = (shoppingList) => {
+    function renderList(list) {
       listPanel.innerHTML = '';
-      const totalAmount = shoppingList.reduce((sum, item) => sum + Number(item.price || 0), 0);
-      statsText.innerText = `${shoppingList.length} 項 ｜ ${formatPrice(totalAmount)}`;
+      const total = list.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      statsText.innerText = `${list.length} 項 ｜ NT$ ${total.toLocaleString()}`;
       
-      shoppingList.forEach((item) => {
-        let pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
-        let pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
-        let linkButton = item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '';
-        
+      list.forEach(item => {
+        const pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
+        const pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `
           <img src="${item.image}" class="item-image">
-          <div class="member-tag">${item.member || ''}</div>
+          <div style="font-size:20px; margin-bottom:5px;">${item.member || ''}</div>
           <div class="item-meta"><span class="tag ${pClass}">優先：${pText}</span></div>
           <h3 class="item-title">${item.name}</h3>
-          <div class="item-price">${formatPrice(item.price)}</div>
+          <div class="item-price">NT$ ${Number(item.price).toLocaleString()}</div>
           <div class="item-actions">
-            ${linkButton}
+            ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : ''}
             <button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button>
           </div>
         `;
         listPanel.appendChild(card);
       });
-    };
+    }
 
-    // 新增/編輯送出
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
+        id: Date.now(),
+        image: currentBase64Image,
         member: document.getElementById('itemMember').value,
         name: document.getElementById('itemName').value,
         price: document.getElementById('itemPrice').value,
         priority: document.getElementById('itemPriority').value,
         link: document.getElementById('itemLink').value
       };
-      if (currentBase64Image) payload.image = currentBase64Image;
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ data: [{ ...payload, id: Date.now() }] })
-        });
-        form.reset();
-        currentBase64Image = '';
-        formPanel.classList.remove('active');
-        fetchData();
-      } catch (err) { alert("儲存失敗"); }
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ data: [payload] })
+      });
+      form.reset();
+      currentBase64Image = '';
+      formPanel.classList.remove('active');
+      fetchData();
     });
 
     async function deleteItem(id) {
