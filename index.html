@@ -502,9 +502,13 @@
 
     renderList();
 
-    new Sortable(listPanel, {
-      handle: '.item-image',
+new Sortable(listPanel, {
+      handle: '.item-image',      // 確保只從圖片處拖曳，避免誤觸整個卡片
       animation: 150,
+      ghostClass: 'sortable-ghost',
+      delay: 100,                // 微調：增加一點延遲，區分「點擊」與「拖曳」
+      delayOnTouchOnly: true,    // 重要：觸控裝置上更不容易誤觸
+      touchStartThreshold: 5,    // 重要：手指移動超過 5px 才觸發拖曳，避免捲動頁面時誤觸
       onEnd: function () {
         const ids = Array.from(listPanel.querySelectorAll('.item-card')).map(c => Number(c.dataset.id));
         shoppingList = ids.map(id => shoppingList.find(i => i.id === id));
