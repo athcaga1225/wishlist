@@ -200,22 +200,29 @@
     });
 
     fileInput.addEventListener('change', (e) => {
-      const reader = new FileReader();
-      reader.onload = (evt) => currentBase64Image = evt.target.result;
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => currentBase64Image = evt.target.result;
+        reader.readAsDataURL(file);
+      }
     });
 
     const formatPrice = (price) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(price);
 
-    // 從 SheetDB 獲取資料
+    // 讀取資料
     const fetchData = async () => {
       try {
         const response = await fetch(API_URL);
         shoppingList = await response.json();
         renderList();
-      } catch (err) { console.error("讀取失敗", err); }
+      } catch (err) { 
+        console.error("讀取失敗", err); 
+        alert("讀取資料失敗，請檢查網路連線。");
+      }
     };
 
+    // 顯示列表
     const renderList = () => {
       listPanel.innerHTML = '';
       const total = shoppingList.reduce((sum, item) => sum + Number(item.price || 0), 0);
@@ -236,6 +243,7 @@
       });
     };
 
+    // 新增資料
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newItem = {
@@ -246,35 +254,52 @@
         price: document.getElementById('itemPrice').value
       };
 
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ data: [newItem] })
-      });
-      
-      form.reset();
-      currentBase64Image = '';
-      formPanel.classList.remove('active');
-      fetchData();
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ data: [newItem] })
+        });
+        
+        if (!response.ok) throw new Error("新增失敗");
+        
+        form.reset();
+        currentBase64Image = '';
+        formPanel.classList.remove('active');
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        alert("新增失敗，請確認網路與 Google Sheet 格式。");
+      }
     });
 
+    // 刪除資料
     window.deleteItem = async (id) => {
       if(confirm('確定刪除？')) {
-        await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
-        fetchData();
+        try {
+          const response = await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
+          if (!response.ok) throw new Error("刪除失敗");
+          fetchData();
+        } catch (err) {
+          console.error(err);
+          alert("刪除失敗，請檢查 API。");
+        }
       }
     };
 
+    // 拖曳功能
     new Sortable(listPanel, {
       handle: '.item-image',
       animation: 150,
       delay: 100,
       delayOnTouchOnly: true,
       touchStartThreshold: 5,
-      onEnd: () => { /* 排序邏輯需後續處理 SheetDB API 的批次更新 */ }
+      onEnd: () => {
+        // 因資料改為遠端雲端，排序目前需依賴 API 更新，暫時保留此框架
+      }
     });
 
-    fetchData();
+    fetchData(); // 初始化讀取
   </script>
 </body>
 </html>
