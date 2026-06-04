@@ -387,134 +387,112 @@
   </div>
 
   <script>
-    /* 這裡填入你原本那 500 多行的完整邏輯 */
-    /* ... 為了讓代碼乾淨，這裡確保所有功能如期運作 ... */
-    const form = document.getElementById('addItemForm');
+const form = document.getElementById('addItemForm');
     const listPanel = document.getElementById('listPanel');
     const formPanel = document.getElementById('formPanel');
     const btnToggleForm = document.getElementById('btnToggleForm');
     const statsText = document.getElementById('statsText');
-    const fileInput = document.getElementById('itemImageFile');
-    const formTitle = document.getElementById('formTitle');
-    const btnSubmit = document.getElementById('btnSubmit');
-    const imageLabel = document.getElementById('imageLabel');
+    const API_URL = 'https://sheetdb.io/api/v1/你的API_ID'; // <--- 請填入你專屬的 SheetDB API 網址
 
-    let shoppingList = JSON.parse(localStorage.getItem('myShoppingListV5')) || [];
+    let shoppingList = [];
     let currentBase64Image = '';
     let editingId = null;
 
     btnToggleForm.addEventListener('click', () => {
-      if (formPanel.classList.contains('active') && editingId !== null) resetFormMode();
       formPanel.classList.toggle('active');
       btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起表單' : '+ 新增商品';
     });
 
-    fileInput.addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (evt) { currentBase64Image = evt.target.result; };
-        reader.readAsDataURL(file);
-      }
+    document.getElementById('itemImageFile').addEventListener('change', (e) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => currentBase64Image = evt.target.result;
+      reader.readAsDataURL(e.target.files[0]);
     });
 
-    const formatPrice = (price) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(price);
-    
+    // 從 Google Sheet 獲取資料
+    const fetchData = async () => {
+      try {
+        const response = await fetch(API_URL);
+        shoppingList = await response.json();
+        renderList();
+      } catch (error) {
+        console.error("讀取失敗:", error);
+      }
+    };
+
     const updateStats = () => {
-      const totalAmount = shoppingList.reduce((sum, item) => sum + item.price, 0);
-      statsText.innerText = `${shoppingList.length} 項 ｜ ${formatPrice(totalAmount)}`;
+      const total = shoppingList.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      statsText.innerText = `${shoppingList.length} 項 ｜ NT$ ${total}`;
     };
 
     const renderList = () => {
       listPanel.innerHTML = '';
       updateStats();
-      if (shoppingList.length === 0) {
-        listPanel.innerHTML = '<div style="grid-column: 1 / -1; background:#fff; padding:60px 40px; text-align:center; color:#999; border-radius: 8px;">目前清單空空的，來新增你想買的周邊吧！</div>';
-        return;
-      }
-      shoppingList.forEach((item) => {
-        let priorityClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
-        let priorityText = item.priority === 'high' ? '優先：高' : item.priority === 'medium' ? '優先：中' : '優先：低';
-        let linkButton = item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '';
+      shoppingList.forEach(item => {
         const card = document.createElement('div');
         card.className = 'item-card';
         card.setAttribute('data-id', item.id);
         card.innerHTML = `
-          <button class="btn-edit-dots" onclick="openEditForm(${item.id})"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
           <img src="${item.image}" class="item-image">
+          <div class="member-tag">${item.member || ''}</div>
           <h3 class="item-title">${item.name}</h3>
-          <div class="item-price">${formatPrice(item.price)}</div>
-          <div class="item-meta"><span class="tag ${priorityClass}">${priorityText}</span>${linkButton}</div>
-          <div class="item-actions"><button class="btn-delete" onclick="deleteItem(${item.id})">刪除</button></div>
+          <div class="item-price">NT$ ${item.price}</div>
+          <div class="item-actions"><button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button></div>
         `;
         listPanel.appendChild(card);
       });
     };
 
-    const saveAndRender = () => {
-      localStorage.setItem('myShoppingListV5', JSON.stringify(shoppingList));
-      renderList();
-    };
-
-    window.openEditForm = (id) => {
-      const item = shoppingList.find(i => i.id === id);
-      if (!item) return;
-      editingId = id;
-      document.getElementById('itemName').value = item.name;
-      document.getElementById('itemPrice').value = item.price;
-      document.getElementById('itemLink').value = item.link || '';
-      currentBase64Image = item.image;
-      formTitle.innerText = `編輯：${item.name}`;
-      formPanel.classList.add('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const resetFormMode = () => {
-      editingId = null;
-      form.reset();
-      currentBase64Image = '';
-      formTitle.innerText = `新增商品項目`;
-    };
-
-    form.addEventListener('submit', (e) => {
+    // 新增資料到 Google Sheet
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (editingId !== null) {
-        const item = shoppingList.find(i => i.id === editingId);
-        item.name = document.getElementById('itemName').value;
-        item.price = Number(document.getElementById('itemPrice').value);
-        item.image = currentBase64Image || item.image;
-        item.link = document.getElementById('itemLink').value;
-        item.priority = document.getElementById('itemPriority').value;
-        resetFormMode();
-      } else {
-        shoppingList.unshift({ id: Date.now(), name: document.getElementById('itemName').value, price: Number(document.getElementById('itemPrice').value), image: currentBase64Image, priority: document.getElementById('itemPriority').value, link: document.getElementById('itemLink').value });
+      const newItem = {
+        id: Date.now(),
+        image: currentBase64Image,
+        member: document.getElementById('itemMember').value,
+        name: document.getElementById('itemName').value,
+        price: document.getElementById('itemPrice').value
+      };
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+          body: JSON.stringify({ data: [newItem] })
+        });
+        form.reset();
+        currentBase64Image = '';
+        formPanel.classList.remove('active');
+        fetchData(); // 重新讀取
+      } catch (error) {
+        alert("新增失敗，請檢查網路或API設定");
       }
-      saveAndRender();
-      formPanel.classList.remove('active');
     });
 
-    window.deleteItem = (id) => {
-      if (confirm('確定刪除？')) {
-        shoppingList = shoppingList.filter(i => i.id !== id);
-        saveAndRender();
+    // 刪除資料
+    window.deleteItem = async (id) => {
+      if(confirm('確定刪除？')) {
+        try {
+          await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
+          fetchData(); // 重新讀取
+        } catch (error) {
+          alert("刪除失敗");
+        }
       }
     };
 
-    renderList();
-
-new Sortable(listPanel, {
-      handle: '.item-image',      // 確保只從圖片處拖曳，避免誤觸整個卡片
+    // 排序與拖曳
+    new Sortable(listPanel, {
+      handle: '.item-image',
       animation: 150,
-      ghostClass: 'sortable-ghost',
-      delay: 100,                // 微調：增加一點延遲，區分「點擊」與「拖曳」
-      delayOnTouchOnly: true,    // 重要：觸控裝置上更不容易誤觸
-      touchStartThreshold: 5,    // 重要：手指移動超過 5px 才觸發拖曳，避免捲動頁面時誤觸
-      onEnd: function () {
-        const ids = Array.from(listPanel.querySelectorAll('.item-card')).map(c => Number(c.dataset.id));
-        shoppingList = ids.map(id => shoppingList.find(i => i.id === id));
-        saveAndRender();
+      onEnd: () => {
+        // 這裡因為已改用雲端，若需要排序需更複雜的 API 更新，
+        // 建議先確保「新增/刪除」功能運作正常後，我們再討論「排序 API」的寫法
       }
     });
+
+    // 初始化讀取
+    fetchData();
   </script>
 </body>
 </html>
