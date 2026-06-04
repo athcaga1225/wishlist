@@ -9,26 +9,22 @@
 
   <style>
     /* 全域色塊設定 */
-    :root {
+:root {
       --bg-color: #F4F5F7;
       --panel-bg: #FFFFFF;
       --text-main: #111111;
       --text-muted: #999999;
       --primary: #000000;
       --input-bg: #EAEAEA;
-
-      /* TWICE 應援漸層色 */
       --twice-magenta: #FF4181;
       --twice-apricot: #F8CB9C;
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
-
-      /* 優先順序色塊 */
       --priority-high: #FF3B30;
       --priority-medium: #FF9500;
       --priority-low: #34C759;
     }
 
-    body {
+body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-main);
@@ -39,7 +35,7 @@
       overflow: hidden;        /* 禁止整個網頁滾動 */
     }
 
-  .container {
+.container {
       max-width: 1000px;
       width: 100%;
       margin: 0 auto;
@@ -48,11 +44,12 @@
       height: 100%;            /* 撐滿高度 */
       padding: 20px;
       box-sizing: border-box;
+      overflow: hidden;        /* 確保內容不溢出 */
     }
 
     /* 頂部統計區塊 */
     .dashboard {
-      background: var(--twice-gradient);
+background: var(--twice-gradient);
       color: #FFFFFF;
       padding: 24px 30px;
       display: flex;
@@ -178,23 +175,16 @@
 
     /* 列表區塊 */
 .list-panel {
-      display: grid;
+display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 20px;
-      overflow-y: auto;        /* 超出範圍時出現滾動條 */
-      padding-bottom: 20px;    /* 給底部一點空間 */
+      overflow-y: auto;        /* 這裡就是你想要的：超出範圍時出現滾動條 */
+      padding: 5px;            /* 留一點點邊距給滾動條 */
       flex-grow: 1;            /* 填滿剩餘空間 */
     }
 
     @media (max-width: 650px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .list-panel {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-      }
+      .list-panel { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     }
 
     /* 卡片設計 */
