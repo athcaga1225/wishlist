@@ -15,6 +15,7 @@
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
       --priority-high: #FF3B30; --priority-medium: #FF9500; --priority-low: #34C759;
     }
+
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     .container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 20px; box-sizing: border-box; overflow: hidden; }
     .dashboard, .form-panel { flex-shrink: 0; }
@@ -51,27 +52,32 @@
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
     .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
+    .member-tag { font-size: 20px; margin-bottom: 8px; }
   </style>
 </head>
 
 <body>
   <div class="container">
     <div class="dashboard">
-      <div class="dashboard-stats"><h1>待買清單</h1><p id="statsText">0 項 ｜ NT$ 0</p></div>
+      <div class="dashboard-stats">
+        <h1>待買清單</h1>
+        <p id="statsText">0 項 ｜ NT$ 0</p>
+      </div>
       <button class="btn-toggle-form" id="btnToggleForm">+ 新增商品</button>
     </div>
+
     <div class="form-panel" id="formPanel">
       <h2 id="formTitle">新增商品項目</h2>
       <form id="addItemForm">
         <div class="form-grid">
           <div class="form-group"><label id="imageLabel">商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
-          <div class="form-group"><label>品名</label><input type="text" id="itemName" required></div>
+          <div class="form-group"><label>品名</label><input type="text" id="itemName" placeholder="例如：SANA 會場限定隨機小卡" required></div>
           <div class="form-group"><label>成員</label>
             <select id="itemMember">
               <option value="🍇">🍇</option><option value="🫐">🫐</option><option value="🍭">🍭</option>
             </select>
           </div>
-          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" required></div>
+          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" placeholder="輸入數字" required></div>
           <div class="form-group"><label>優先順序</label>
             <select id="itemPriority">
               <option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option>
@@ -103,7 +109,7 @@
       btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起表單' : '+ 新增商品';
     });
 
-    // --- 修改區塊：加入自動壓縮圖片 ---
+    // 圖片壓縮邏輯 (解決 localStorage 空間不足問題)
     fileInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -112,13 +118,14 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_SIZE = 600; // 最大寬高限制
+          const MAX_SIZE = 500;
           let w = img.width, h = img.height;
-          if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } } 
-          else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
+          if (w > MAX_SIZE || h > MAX_SIZE) {
+            if (w > h) { h *= MAX_SIZE / w; w = MAX_SIZE; } else { w *= MAX_SIZE / h; h = MAX_SIZE; }
+          }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          currentBase64Image = canvas.toDataURL('image/jpeg', 0.5); // 壓縮品質 0.5
+          currentBase64Image = canvas.toDataURL('image/jpeg', 0.6);
         };
         img.src = evt.target.result;
       };
@@ -136,8 +143,8 @@
       listPanel.innerHTML = '';
       updateStats();
       shoppingList.forEach((item) => {
-        let pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
-        let pText = item.priority === 'high' ? '優先：高' : item.priority === 'medium' ? '優先：中' : '優先：低';
+        let priorityClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
+        let priorityText = item.priority === 'high' ? '優先：高' : item.priority === 'medium' ? '優先：中' : '優先：低';
         let linkButton = item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '';
         const card = document.createElement('div');
         card.className = 'item-card';
@@ -145,7 +152,8 @@
         card.innerHTML = `
           <button class="btn-edit-dots" onclick="openEditForm(${item.id})"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
           <img src="${item.image}" class="item-image">
-          <div class="item-meta"><span class="tag ${pClass}">${pText}</span></div>
+          <div class="member-tag">${item.member || ''}</div>
+          <div class="item-meta"><span class="tag ${priorityClass}">${priorityText}</span></div>
           <h3 class="item-title">${item.name}</h3>
           <div class="item-price">${formatPrice(item.price)}</div>
           <div class="item-actions">
@@ -158,10 +166,8 @@
     };
 
     const saveAndRender = () => {
-      try {
-        localStorage.setItem('myShoppingListV5', JSON.stringify(shoppingList));
-        renderList();
-      } catch (e) { alert("空間不足，無法新增！"); }
+      localStorage.setItem('myShoppingListV5', JSON.stringify(shoppingList));
+      renderList();
     };
 
     window.openEditForm = (id) => {
@@ -171,16 +177,11 @@
       document.getElementById('itemName').value = item.name;
       document.getElementById('itemPrice').value = item.price;
       document.getElementById('itemLink').value = item.link || '';
+      document.getElementById('itemMember').value = item.member; // 確保編輯時讀取正確成員
+      document.getElementById('itemPriority').value = item.priority;
       currentBase64Image = item.image;
       formTitle.innerText = `編輯：${item.name}`;
       formPanel.classList.add('active');
-    };
-
-    const resetFormMode = () => {
-      editingId = null;
-      form.reset();
-      currentBase64Image = '';
-      formTitle.innerText = `新增商品項目`;
     };
 
     form.addEventListener('submit', (e) => {
@@ -191,13 +192,26 @@
         item.price = Number(document.getElementById('itemPrice').value);
         item.image = currentBase64Image || item.image;
         item.link = document.getElementById('itemLink').value;
+        item.member = document.getElementById('itemMember').value; // 修正編輯儲存成員
         item.priority = document.getElementById('itemPriority').value;
-        resetFormMode();
+        editingId = null;
+        form.reset();
+        currentBase64Image = '';
+        formTitle.innerText = `新增商品項目`;
       } else {
-        shoppingList.unshift({ id: Date.now(), name: document.getElementById('itemName').value, price: Number(document.getElementById('itemPrice').value), image: currentBase64Image, priority: document.getElementById('itemPriority').value, link: document.getElementById('itemLink').value });
+        shoppingList.unshift({ 
+          id: Date.now(), 
+          name: document.getElementById('itemName').value, 
+          price: Number(document.getElementById('itemPrice').value), 
+          image: currentBase64Image, 
+          priority: document.getElementById('itemPriority').value, 
+          link: document.getElementById('itemLink').value,
+          member: document.getElementById('itemMember').value // 修正新增儲存成員
+        });
       }
       saveAndRender();
       formPanel.classList.remove('active');
+      btnToggleForm.innerText = '+ 新增商品';
     });
 
     window.deleteItem = (id) => {
