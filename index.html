@@ -38,7 +38,6 @@
     .item-card { position: relative; background-color: var(--panel-bg); padding: 10px; display: flex; flex-direction: column; border-radius: 8px; border: 1px solid #eee; height: fit-content; }
     .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: grab; }
     
-    /* 編輯按鈕樣式 - 鉛筆圖示 */
     .btn-edit-dots { position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background-color: rgba(255,255,255,0.9); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .item-card:hover .btn-edit-dots { opacity: 1; }
     
@@ -100,11 +99,11 @@
     
     let currentBase64Image = '';
     let editingId = null;
-    let allItems = []; // 儲存全域資料方便編輯
+    let allItems = [];
 
     btnToggleForm.addEventListener('click', () => {
       formPanel.classList.toggle('active');
-      btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起' : '+ 新增商品';
+      btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起表單' : '+ 新增商品';
     });
 
     fileInput.addEventListener('change', function(e) {
@@ -149,7 +148,7 @@
         card.setAttribute('data-id', item.id);
         card.innerHTML = `
           <button class="btn-edit-dots" onclick="openEditForm('${item.id}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           <span class="tag ${pClass}">優先：${pText}</span>
           <img src="${item.image}" class="item-image">
@@ -172,10 +171,11 @@
       document.getElementById('itemName').value = item.name;
       document.getElementById('itemPrice').value = item.price;
       document.getElementById('itemPriority').value = item.priority;
-      document.getElementById('itemLink').value = item.link || '';
+      document.getElementById('itemLink').value = (item.link === 'undefined' || item.link === 'null') ? '' : item.link;
       document.getElementById('itemMember').value = item.member || '🍇';
       document.getElementById('formTitle').innerText = "編輯商品";
       formPanel.classList.add('active');
+      btnToggleForm.innerText = '- 收起表單'; // 修正這裡
     }
 
     form.addEventListener('submit', async (e) => {
