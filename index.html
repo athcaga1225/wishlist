@@ -7,127 +7,59 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <style>
-    /* --- CSS 樣式表 --- */
     :root {
-      --bg-color: #F4F5F7;
-      --panel-bg: #FFFFFF;
-      --text-main: #111111;
-      --text-muted: #999999;
-      --twice-magenta: #FF4181;
-      --twice-apricot: #F8CB9C;
+      --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
+      --twice-magenta: #FF4181; --twice-apricot: #F8CB9C;
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
+      --priority-high: #FF3B30; --priority-medium: #FF9500; --priority-low: #34C759;
     }
 
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .container {
-      max-width: 1000px;
-      width: 100%;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    .container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 20px; box-sizing: border-box; overflow: hidden; }
     .dashboard, .form-panel { flex-shrink: 0; }
-
-    .dashboard {
-      background: var(--twice-gradient);
-      color: #FFFFFF;
-      padding: 24px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      border-radius: 8px;
-    }
-
-    .dashboard-stats h1 { margin: 0; font-size: 24px; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1); }
-    .dashboard-stats p { margin: 8px 0 0 0; font-size: 16px; color: #FFFFFF; opacity: 0.9; }
-
-    .btn-toggle-form {
-      background-color: #FFFFFF;
-      color: var(--twice-magenta);
-      border: none;
-      padding: 12px 0;
-      width: 140px;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .form-panel { background-color: var(--panel-bg); padding: 30px; margin-bottom: 30px; display: none; border-radius: 8px; }
+    
+    /* 標題與間距修正 */
+    .dashboard { background: var(--twice-gradient); color: #FFFFFF; padding: 24px 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-radius: 8px; }
+    .form-panel { background-color: var(--panel-bg); padding: 20px; margin-bottom: 20px; display: none; border-radius: 8px; }
     .form-panel.active { display: block; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-panel h2 { margin: 0 0 15px 0; font-size: 18px; color: var(--twice-magenta); }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .form-group { display: flex; flex-direction: column; }
     label { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-    input, select { padding: 12px; background-color: #f2f2f2; border: none; border-radius: 4px; outline: none; }
+    input, select { padding: 10px; background-color: #f2f2f2; border: none; border-radius: 4px; outline: none; }
 
-    .btn-submit {
-      grid-column: 1 / -1; background: var(--twice-gradient); color: #FFFFFF; border: none; padding: 16px; font-weight: bold; cursor: pointer; border-radius: 4px;
-    }
+    .btn-submit { grid-column: 1 / -1; background: var(--twice-gradient); color: #FFFFFF; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
+    .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 5px; flex-grow: 1; }
 
-    .list-panel {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
-      overflow-y: auto;
-      padding: 5px;
-      flex-grow: 1;
-    }
-
-    .item-card {
-      position: relative;
-      background-color: var(--panel-bg);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      border-radius: 8px;
-      height: fit-content;
-    }
-
-    .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
+    /* 卡片與標籤樣式 */
+    .item-card { position: relative; background-color: var(--panel-bg); padding: 16px; display: flex; flex-direction: column; border-radius: 8px; height: fit-content; }
+    .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: grab; }
     .member-tag { font-size: 16px; margin-bottom: 4px; }
     .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; min-height: 2.8em; }
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+    .tag { padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+    .tag-high { background-color: var(--priority-high); }
+    .tag-medium { background-color: var(--priority-medium); }
+    .tag-low { background-color: var(--priority-low); }
     .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; }
     .btn-delete { background: none; border: none; color: #999; text-decoration: underline; cursor: pointer; font-size: 12px; margin-left: auto; }
-    .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 4px; margin-left: 8px; }
-
-    @media (max-width: 650px) {
-      .form-grid { grid-template-columns: 1fr; }
-      .list-panel { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    }
+    .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 8px; font-size: 12px; border-radius: 4px; }
   </style>
 </head>
 
 <body>
   <div class="container">
     <div class="dashboard">
-      <div class="dashboard-stats">
-        <h1>待買清單</h1>
-        <p id="statsText">0 項 ｜ NT$ 0</p>
-      </div>
+      <div class="dashboard-stats"><h1>待買清單</h1><p id="statsText">0 項 ｜ NT$ 0</p></div>
       <button class="btn-toggle-form" id="btnToggleForm">+ 新增商品</button>
     </div>
 
     <div class="form-panel" id="formPanel">
-      <h2 id="formTitle">新增商品項目</h2>
+      <h2>新增商品項目</h2>
       <form id="addItemForm">
         <div class="form-grid">
-          <div class="form-group"><label>商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
+          <div class="form-group"><label>商品圖片</label><input type="file" id="itemImageFile" accept="image/*" required></div>
           <div class="form-group"><label>成員</label>
             <select id="itemMember">
               <option value="🍇">🍇</option><option value="🫐">🫐</option><option value="🍭">🍭</option>
@@ -135,7 +67,12 @@
           </div>
           <div class="form-group"><label>品名</label><input type="text" id="itemName" required></div>
           <div class="form-group"><label>價格</label><input type="number" id="itemPrice" required></div>
-          <div class="form-group"><label>購買網址</label><input type="url" id="itemLink" placeholder="https://..."></div>
+          <div class="form-group"><label>優先順序</label>
+            <select id="itemPriority">
+              <option value="high">高</option><option value="medium">中</option><option value="low">低</option>
+            </select>
+          </div>
+          <div class="form-group"><label>通路連結 (選填)</label><input type="url" id="itemLink" placeholder="https://..."></div>
           <button type="submit" class="btn-submit" id="btnSubmit">儲存至清單</button>
         </div>
       </form>
@@ -166,7 +103,7 @@
       reader.readAsDataURL(e.target.files[0]);
     });
 
-    const formatPrice = (price) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(price);
+    const formatPrice = (p) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(p);
 
     const fetchData = async () => {
       try {
@@ -182,12 +119,15 @@
       statsText.innerText = `${shoppingList.length} 項 ｜ ${formatPrice(total)}`;
       
       shoppingList.forEach(item => {
+        const pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
+        const pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
+        
         const card = document.createElement('div');
         card.className = 'item-card';
-        card.setAttribute('data-id', item.id);
         card.innerHTML = `
           <img src="${item.image}" class="item-image">
           <div class="member-tag">${item.member || ''}</div>
+          <span class="tag ${pClass}">優先：${pText}</span>
           <h3 class="item-title">${item.name}</h3>
           <div class="item-price">${formatPrice(item.price)}</div>
           <div class="item-actions">
@@ -207,6 +147,7 @@
         member: document.getElementById('itemMember').value,
         name: document.getElementById('itemName').value,
         price: document.getElementById('itemPrice').value,
+        priority: document.getElementById('itemPriority').value,
         link: document.getElementById('itemLink').value
       };
 
@@ -220,7 +161,7 @@
         currentBase64Image = '';
         formPanel.classList.remove('active');
         fetchData();
-      } catch (err) { alert("新增失敗"); }
+      } catch (err) { alert("新增失敗，請檢查網路"); }
     });
 
     window.deleteItem = async (id) => {
@@ -229,14 +170,6 @@
         fetchData();
       }
     };
-
-    new Sortable(listPanel, {
-      handle: '.item-image',
-      animation: 150,
-      delay: 100,
-      delayOnTouchOnly: true,
-      touchStartThreshold: 5
-    });
 
     fetchData();
   </script>
