@@ -96,6 +96,7 @@
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/lbfdjay316stk';
     const form = document.getElementById('addItemForm');
+    const btnSubmit = document.getElementById('btnSubmit'); // 新增引用
     const listPanel = document.getElementById('listPanel');
     const formPanel = document.getElementById('formPanel');
     const btnToggleForm = document.getElementById('btnToggleForm');
@@ -154,6 +155,7 @@
         card.className = 'item-card';
         card.setAttribute('data-id', item.id);
         card.innerHTML = `
+          <button class="btn-edit-dots"><svg viewBox="0 0 24 24"><path d="M12 12h.01M12 6h.01M12 18h.01"></path></svg></button>
           <span class="tag ${pClass}">優先：${pText}</span>
           <img src="${item.image}" class="item-image">
           <div class="member-tag">${item.member || ''}</div>
@@ -170,6 +172,11 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      // Loading 狀態
+      btnSubmit.innerText = "儲存中...";
+      btnSubmit.disabled = true;
+
       const payload = {
         id: Date.now(),
         member: document.getElementById('itemMember').value,
@@ -179,16 +186,21 @@
         link: document.getElementById('itemLink').value,
         image: currentBase64Image
       };
+      
       await fetch(API_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ data: [payload] })
       });
+      
+      // 重置狀態
       form.reset();
       currentBase64Image = '';
       formPanel.classList.remove('active');
-      // --- 修正點：送出後重置按鈕文字 ---
       btnToggleForm.innerText = '+ 新增商品';
+      btnSubmit.innerText = "儲存至清單";
+      btnSubmit.disabled = false;
+      
       fetchData();
     });
 
