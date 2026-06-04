@@ -7,9 +7,10 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <style>
-    /* CSS 設定 - 完全保持你的排版，無變動 */
+    /* 全域色塊設定 (完全保留你的版本) */
     :root {
       --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
+      --primary: #000000; --input-bg: #EAEAEA;
       --twice-magenta: #FF4181; --twice-apricot: #F8CB9C;
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
       --priority-high: #FF3B30; --priority-medium: #FF9500; --priority-low: #34C759;
@@ -17,13 +18,12 @@
 
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     .container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 10px; box-sizing: border-box; overflow: hidden; }
-    
-    .dashboard { background: var(--twice-gradient); color: #FFFFFF; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-radius: 8px; flex-shrink: 0; }
+    .dashboard, .form-panel { flex-shrink: 0; }
+    .dashboard { background: var(--twice-gradient); color: #FFFFFF; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-radius: 8px; }
     .dashboard-stats h1 { margin: 0; font-size: 20px; }
     .dashboard-stats p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.9; }
     .btn-toggle-form { background-color: #FFFFFF; color: var(--twice-magenta); border: none; padding: 10px; width: 100px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-    
-    .form-panel { background-color: var(--panel-bg); padding: 20px; margin-bottom: 15px; display: none; border-radius: 8px; flex-shrink: 0; }
+    .form-panel { background-color: var(--panel-bg); padding: 20px; margin-bottom: 15px; display: none; border-radius: 8px; }
     .form-panel.active { display: block; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .form-group { display: flex; flex-direction: column; }
@@ -32,14 +32,13 @@
     select { padding: 8px; background-color: #f2f2f2; border: none; font-size: 14px; border-radius: 4px; cursor: pointer; }
     .btn-submit { background: var(--twice-gradient); color: #FFFFFF; border: none; padding: 12px; font-weight: bold; border-radius: 4px; grid-column: 1 / -1; }
     
-    /* 兩欄式排列 */
-    .list-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto; padding: 5px; flex-grow: 1; }
+    .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; overflow-y: auto; padding: 5px; flex-grow: 1; }
+    @media (max-width: 650px) { .list-panel { grid-template-columns: repeat(2, 1fr); } }
 
-    /* 卡片設計 */
     .item-card { position: relative; background-color: var(--panel-bg); padding: 10px; display: flex; flex-direction: column; border-radius: 8px; border: 1px solid #eee; height: fit-content; }
     .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: grab; }
     
-    .btn-edit-dots { position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background-color: rgba(255,255,255,0.8); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; opacity: 0; transition: opacity 0.2s; }
+    .btn-edit-dots { position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background-color: rgba(255,255,255,0.9); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .item-card:hover .btn-edit-dots { opacity: 1; }
     
     .tag { position: absolute; top: 15px; left: 15px; padding: 3px 6px; font-size: 10px; font-weight: bold; color: #FFFFFF; border-radius: 4px; z-index: 5; }
@@ -91,17 +90,20 @@
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/lbfdjay316stk';
     const form = document.getElementById('addItemForm');
+    const btnSubmit = document.getElementById('btnSubmit');
     const listPanel = document.getElementById('listPanel');
     const formPanel = document.getElementById('formPanel');
     const btnToggleForm = document.getElementById('btnToggleForm');
     const statsText = document.getElementById('statsText');
     const fileInput = document.getElementById('itemImageFile');
+    
     let currentBase64Image = '';
     let editingId = null;
+    let allItems = [];
 
     btnToggleForm.addEventListener('click', () => {
       formPanel.classList.toggle('active');
-      btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起' : '+ 新增商品';
+      btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起表單' : '+ 新增商品';
     });
 
     fileInput.addEventListener('change', function(e) {
@@ -128,8 +130,8 @@
 
     async function fetchData() {
       const res = await fetch(API_URL);
-      const data = await res.json();
-      renderList(data);
+      allItems = await res.json();
+      renderList(allItems);
     }
 
     function renderList(list) {
@@ -145,8 +147,8 @@
         card.className = 'item-card';
         card.setAttribute('data-id', item.id);
         card.innerHTML = `
-          <button class="btn-edit-dots" onclick="openEditForm('${item.id}', '${item.name}', '${item.price}', '${item.priority}', '${item.link || ''}', '${item.member}')">
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 12h.01M12 6h.01M12 18h.01"></path></svg>
+          <button class="btn-edit-dots" onclick="openEditForm('${item.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           <span class="tag ${pClass}">優先：${pText}</span>
           <img src="${item.image}" class="item-image">
@@ -162,19 +164,25 @@
       });
     }
 
-    function openEditForm(id, name, price, priority, link, member) {
+    function openEditForm(id) {
+      const item = allItems.find(i => i.id == id);
+      if(!item) return;
       editingId = id;
-      document.getElementById('itemName').value = name;
-      document.getElementById('itemPrice').value = price;
-      document.getElementById('itemPriority').value = priority;
-      document.getElementById('itemLink').value = (link === 'undefined' || link === 'null') ? '' : link;
-      document.getElementById('itemMember').value = member;
+      document.getElementById('itemName').value = item.name;
+      document.getElementById('itemPrice').value = item.price;
+      document.getElementById('itemPriority').value = item.priority;
+      document.getElementById('itemLink').value = (item.link === 'undefined' || item.link === 'null') ? '' : item.link;
+      document.getElementById('itemMember').value = item.member || '🍇';
       document.getElementById('formTitle').innerText = "編輯商品";
       formPanel.classList.add('active');
+      btnToggleForm.innerText = '- 收起表單'; // 修正這裡
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      btnSubmit.innerText = "儲存中...";
+      btnSubmit.disabled = true;
+
       const payload = {
         member: document.getElementById('itemMember').value,
         name: document.getElementById('itemName').value,
@@ -183,14 +191,18 @@
         link: document.getElementById('itemLink').value,
         ...(currentBase64Image && { image: currentBase64Image })
       };
+
       if (editingId) {
         await fetch(`${API_URL}/id/${editingId}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
       } else {
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [{...payload, id: Date.now()}] }) });
       }
+
       form.reset();
       currentBase64Image = '';
       editingId = null;
+      btnSubmit.innerText = "儲存";
+      btnSubmit.disabled = false;
       formPanel.classList.remove('active');
       btnToggleForm.innerText = '+ 新增商品';
       fetchData();
