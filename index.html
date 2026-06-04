@@ -49,10 +49,13 @@
     
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
     .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
-    .tag { padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; }
+    
+    /* 修正標籤定位 */
+    .tag { position: absolute; top: 25px; left: 25px; padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; z-index: 10; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
     .tag-low { background-color: var(--priority-low); }
+
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
     .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
@@ -151,12 +154,13 @@
         
         const card = document.createElement('div');
         card.className = 'item-card';
+        card.setAttribute('data-id', item.id);
         card.innerHTML = `
+          <span class="tag ${pClass}">優先：${pText}</span>
           <img src="${item.image}" class="item-image">
           <div class="member-tag">${item.member || ''}</div>
           <h3 class="item-title">${item.name}</h3>
           <div class="item-price">${formatPrice(item.price)}</div>
-          <div class="item-meta"><span class="tag ${pClass}">優先：${pText}</span></div>
           <div class="item-actions">
             ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '<div></div>'}
             <button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button>
