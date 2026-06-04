@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>待買清單</title>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
   <style>
-    /* 全域色塊設定 */
     :root {
       --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
       --primary: #000000; --input-bg: #EAEAEA;
@@ -15,7 +13,6 @@
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
       --priority-high: #FF3B30; --priority-medium: #FF9500; --priority-low: #34C759;
     }
-
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     .container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 20px; box-sizing: border-box; overflow: hidden; }
     .dashboard, .form-panel { flex-shrink: 0; }
@@ -44,7 +41,7 @@
     .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
     .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; min-height: 2.8em; }
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
-    .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
+    .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
     .tag { padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
@@ -52,7 +49,6 @@
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
     .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
-    .member-tag { font-size: 20px; margin-bottom: 8px; }
   </style>
 </head>
 
@@ -70,7 +66,7 @@
       <h2 id="formTitle">新增商品項目</h2>
       <form id="addItemForm">
         <div class="form-grid">
-          <div class="form-group"><label id="imageLabel">商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
+          <div class="form-group"><label>商品圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
           <div class="form-group"><label>品名</label><input type="text" id="itemName" placeholder="例如：SANA 會場限定隨機小卡" required></div>
           <div class="form-group"><label>成員</label>
             <select id="itemMember">
@@ -109,7 +105,6 @@
       btnToggleForm.innerText = formPanel.classList.contains('active') ? '- 收起表單' : '+ 新增商品';
     });
 
-    // 圖片壓縮邏輯 (解決 localStorage 空間不足問題)
     fileInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -143,8 +138,8 @@
       listPanel.innerHTML = '';
       updateStats();
       shoppingList.forEach((item) => {
-        let priorityClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
-        let priorityText = item.priority === 'high' ? '優先：高' : item.priority === 'medium' ? '優先：中' : '優先：低';
+        let pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
+        let pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
         let linkButton = item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '';
         const card = document.createElement('div');
         card.className = 'item-card';
@@ -153,21 +148,20 @@
           <button class="btn-edit-dots" onclick="openEditForm(${item.id})"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
           <img src="${item.image}" class="item-image">
           <div class="member-tag">${item.member || ''}</div>
-          <div class="item-meta"><span class="tag ${priorityClass}">${priorityText}</span></div>
           <h3 class="item-title">${item.name}</h3>
           <div class="item-price">${formatPrice(item.price)}</div>
-          <div class="item-actions">
-            ${linkButton}
-            <button class="btn-delete" onclick="deleteItem(${item.id})">刪除</button>
-          </div>
+          <div class="item-meta"><span class="tag ${pClass}">優先：${pText}</span>${linkButton}</div>
+          <div class="item-actions"><button class="btn-delete" onclick="deleteItem(${item.id})">刪除</button></div>
         `;
         listPanel.appendChild(card);
       });
     };
 
     const saveAndRender = () => {
-      localStorage.setItem('myShoppingListV5', JSON.stringify(shoppingList));
-      renderList();
+      try {
+        localStorage.setItem('myShoppingListV5', JSON.stringify(shoppingList));
+        renderList();
+      } catch (e) { alert("儲存失敗！空間已滿，請刪除部分項目。"); }
     };
 
     window.openEditForm = (id) => {
@@ -177,7 +171,7 @@
       document.getElementById('itemName').value = item.name;
       document.getElementById('itemPrice').value = item.price;
       document.getElementById('itemLink').value = item.link || '';
-      document.getElementById('itemMember').value = item.member; // 確保編輯時讀取正確成員
+      document.getElementById('itemMember').value = item.member;
       document.getElementById('itemPriority').value = item.priority;
       currentBase64Image = item.image;
       formTitle.innerText = `編輯：${item.name}`;
@@ -192,23 +186,15 @@
         item.price = Number(document.getElementById('itemPrice').value);
         item.image = currentBase64Image || item.image;
         item.link = document.getElementById('itemLink').value;
-        item.member = document.getElementById('itemMember').value; // 修正編輯儲存成員
+        item.member = document.getElementById('itemMember').value;
         item.priority = document.getElementById('itemPriority').value;
         editingId = null;
-        form.reset();
-        currentBase64Image = '';
-        formTitle.innerText = `新增商品項目`;
       } else {
-        shoppingList.unshift({ 
-          id: Date.now(), 
-          name: document.getElementById('itemName').value, 
-          price: Number(document.getElementById('itemPrice').value), 
-          image: currentBase64Image, 
-          priority: document.getElementById('itemPriority').value, 
-          link: document.getElementById('itemLink').value,
-          member: document.getElementById('itemMember').value // 修正新增儲存成員
-        });
+        shoppingList.unshift({ id: Date.now(), name: document.getElementById('itemName').value, price: Number(document.getElementById('itemPrice').value), image: currentBase64Image, priority: document.getElementById('itemPriority').value, link: document.getElementById('itemLink').value, member: document.getElementById('itemMember').value });
       }
+      form.reset();
+      currentBase64Image = '';
+      formTitle.innerText = `新增商品項目`;
       saveAndRender();
       formPanel.classList.remove('active');
       btnToggleForm.innerText = '+ 新增商品';
