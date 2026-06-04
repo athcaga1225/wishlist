@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <style>
-    /* 全域色塊設定 */
+    /* 全域色塊設定 (完全保留你的版本) */
     :root {
       --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
       --primary: #000000; --input-bg: #EAEAEA;
@@ -36,25 +36,26 @@
     .btn-submit:hover { opacity: 0.85; }
     .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; overflow-y: auto; padding: 5px; flex-grow: 1; }
     @media (max-width: 650px) { .form-grid { grid-template-columns: 1fr; } .list-panel { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
-
-    /* 緊湊化卡片樣式 */
-    .item-card { position: relative; background-color: var(--panel-bg); padding: 12px; display: flex; flex-direction: column; border-radius: 8px; box-sizing: border-box; height: fit-content; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .sortable-ghost { opacity: 0.4; background-color: #EAEAEA; transform: scale(0.98); }
-    .btn-edit-dots { position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 10; opacity: 0; transition: opacity 0.2s; }
+    
+    .item-card { position: relative; background-color: var(--panel-bg); padding: 16px; display: flex; flex-direction: column; border-radius: 8px; box-sizing: border-box; height: fit-content; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .btn-edit-dots { position: absolute; top: 24px; right: 24px; width: 32px; height: 32px; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 10; opacity: 0; transition: opacity 0.2s; }
     .item-card:hover .btn-edit-dots { opacity: 1; }
-    .btn-edit-dots svg { width: 14px; height: 14px; stroke: var(--text-main); fill: none; }
-    .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: grab; }
-    .item-title { font-size: 14px; font-weight: bold; margin: 0 0 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; min-height: 2.6em; }
-    .item-price { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: var(--text-main); }
-    .item-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 8px; }
-    .tag { padding: 2px 6px; font-size: 11px; font-weight: bold; color: #FFFFFF; border-radius: 4px; }
+    .btn-edit-dots svg { width: 16px; height: 16px; stroke: var(--text-main); fill: none; }
+    .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
+    
+    /* 這裡限制品名為單行，超出顯示省略號 */
+    .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
+    .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
+    .tag { padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
     .tag-low { background-color: var(--priority-low); }
-    .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 2px 8px; font-size: 11px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
-    .item-actions { display: flex; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--input-bg); }
-    .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; text-decoration: underline; margin-left: auto; }
-    .member-tag { font-size: 16px; margin-bottom: 4px; }
+    .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
+    .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
+    .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
+    .member-tag { font-size: 20px; margin-bottom: 8px; }
   </style>
 </head>
 
@@ -98,9 +99,8 @@
     const btnToggleForm = document.getElementById('btnToggleForm');
     const statsText = document.getElementById('statsText');
     const fileInput = document.getElementById('itemImageFile');
-    const formTitle = document.getElementById('formTitle');
+    
     let currentBase64Image = '';
-    let editingId = null;
 
     btnToggleForm.addEventListener('click', () => {
       formPanel.classList.toggle('active');
@@ -130,7 +130,7 @@
     });
 
     const formatPrice = (p) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(p);
-    
+
     async function fetchData() {
       try {
         const res = await fetch(API_URL);
@@ -151,7 +151,6 @@
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `
-          <button class="btn-edit-dots" onclick="openEditForm(${item.id})"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
           <img src="${item.image}" class="item-image">
           <div class="member-tag">${item.member || ''}</div>
           <h3 class="item-title">${item.name}</h3>
@@ -169,30 +168,24 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
+        id: Date.now(),
         member: document.getElementById('itemMember').value,
         name: document.getElementById('itemName').value,
         price: document.getElementById('itemPrice').value,
         priority: document.getElementById('itemPriority').value,
-        link: document.getElementById('itemLink').value
+        link: document.getElementById('itemLink').value,
+        image: currentBase64Image
       };
-      if (currentBase64Image) payload.image = currentBase64Image;
-      if (editingId) {
-        await fetch(`${API_URL}/id/${editingId}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-      } else {
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [{...payload, id: Date.now()}] }) });
-      }
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ data: [payload] })
+      });
       form.reset();
       currentBase64Image = '';
-      editingId = null;
       formPanel.classList.remove('active');
       fetchData();
     });
-
-    window.openEditForm = (id) => {
-      editingId = id;
-      formPanel.classList.add('active');
-      formTitle.innerText = "編輯商品";
-    };
 
     async function deleteItem(id) {
       if(confirm('確定刪除？')) {
@@ -200,6 +193,7 @@
         fetchData();
       }
     }
+
     fetchData();
   </script>
 </body>
