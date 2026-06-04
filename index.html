@@ -44,20 +44,18 @@
     .btn-edit-dots svg { width: 16px; height: 16px; stroke: var(--text-main); fill: none; }
     .item-image { width: 100%; aspect-ratio: 3 / 4; background-color: var(--input-bg); object-fit: cover; border-radius: 6px; margin-bottom: 12px; cursor: grab; }
     
-    /* 品名限制為一行 */
     .item-title { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     
-    .item-price { font-size: 18px; font-weight: bold; color: var(--text-main); }
+    .item-price { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--text-main); }
     .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 16px; }
     
-    /* 修正標籤定位 */
     .tag { position: absolute; top: 25px; left: 25px; padding: 4px 8px; font-size: 12px; font-weight: bold; color: #FFFFFF; border-radius: 4px; z-index: 10; }
     .tag-high { background-color: var(--priority-high); }
     .tag-medium { background-color: var(--priority-medium); }
     .tag-low { background-color: var(--priority-low); }
 
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 10px; font-size: 12px; font-weight: bold; text-align: center; border-radius: 4px; white-space: nowrap; }
-    .item-actions { display: flex; align-items: center; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
+    .item-actions { display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--input-bg); }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; text-decoration: underline; margin-left: auto; }
     .member-tag { font-size: 20px; margin-bottom: 8px; }
   </style>
@@ -189,6 +187,8 @@
       form.reset();
       currentBase64Image = '';
       formPanel.classList.remove('active');
+      // --- 修正點：送出後重置按鈕文字 ---
+      btnToggleForm.innerText = '+ 新增商品';
       fetchData();
     });
 
