@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -10,37 +9,81 @@
   <style>
     :root {
       --bg-color: #F4F5F7; --panel-bg: #FFFFFF; --text-main: #111111; --text-muted: #999999;
+      --primary: #000000; --input-bg: #EAEAEA;
       --twice-magenta: #FF4181; --twice-apricot: #F8CB9C;
       --twice-gradient: linear-gradient(135deg, var(--twice-magenta) 0%, var(--twice-apricot) 100%);
       --priority-high: #FF3B30; --priority-medium: #FF9500; --priority-low: #34C759;
     }
+
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     .container { max-width: 1000px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; height: 100%; padding: 10px; box-sizing: border-box; overflow: hidden; }
+    .dashboard, .form-panel { flex-shrink: 0; }
     .dashboard { background: var(--twice-gradient); color: #FFFFFF; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-radius: 8px; }
-    .btn-toggle-form { background-color: #FFFFFF; color: var(--twice-magenta); border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    .dashboard-stats h1 { margin: 0; font-size: 20px; }
+    .dashboard-stats p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.9; }
+    .btn-toggle-form { background-color: #FFFFFF; color: var(--twice-magenta); border: none; padding: 10px; width: 100px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; }
     .form-panel { background-color: var(--panel-bg); padding: 20px; margin-bottom: 15px; display: none; border-radius: 8px; max-height: 65vh; overflow-y: auto; }
     .form-panel.active { display: block; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-group { display: flex; flex-direction: column; }
+    label { font-weight: bold; margin-bottom: 4px; font-size: 12px; }
+    input { padding: 8px; background-color: #f2f2f2; border: none; font-size: 14px; border-radius: 4px; }
+    select { padding: 8px; background-color: #f2f2f2; border: none; font-size: 14px; border-radius: 4px; cursor: pointer; }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .btn-submit { display: flex; justify-content: center; align-items: center; background: var(--twice-gradient); color: #FFFFFF; border: none; padding: 12px; font-weight: bold; border-radius: 4px; grid-column: 1 / -1; cursor: pointer;}
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
     .list-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; overflow-y: auto; padding: 5px; flex-grow: 1; }
-    .item-card { position: relative; background-color: var(--panel-bg); padding: 10px; border-radius: 8px; border: 1px solid #eee; }
-    .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; cursor: grab; }
-    .btn-delete { background: #fee; border: 1px solid #fcc; color: #d00; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
-    @media (max-width: 650px) { .list-panel { grid-template-columns: repeat(2, 1fr); } }
+    
+    @media (max-width: 650px) { 
+      .form-grid { grid-template-columns: 1fr; } 
+      .list-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } 
+      .btn-edit-dots { opacity: 1 !important; }
+    }
+
+    .item-card { position: relative; background-color: var(--panel-bg); padding: 10px; display: flex; flex-direction: column; border-radius: 8px; border: 1px solid #eee; height: fit-content; min-width: 0; box-sizing: border-box; }
+    .item-image { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; margin-bottom: 8px; cursor: grab; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    
+    .btn-edit-dots { position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background-color: rgba(255,255,255,0.9); border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); color: #111;}
+    .item-card:hover .btn-edit-dots { opacity: 1; }
+    
+    .tag { position: absolute; top: 15px; left: 15px; padding: 3px 6px; font-size: 10px; font-weight: bold; color: #FFFFFF; border-radius: 4px; z-index: 5; }
+    .tag-high { background-color: var(--priority-high); }
+    .tag-medium { background-color: var(--priority-medium); }
+    .tag-low { background-color: var(--priority-low); }
+
+    .member-tag { font-size: 16px; margin-bottom: 2px; }
+    .item-title { font-size: 13px; font-weight: bold; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .item-price { font-size: 15px; font-weight: bold; margin-bottom: 8px; }
+    .item-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 8px; border-top: 1px solid #f2f2f2; }
+    .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; white-space: nowrap; }
+    .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; text-decoration: underline; flex-shrink: 0; }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="dashboard">
-      <div><h1 style="margin:0;font-size:18px;">待買清單</h1><p id="statsText" style="margin:0;font-size:12px;">載入中...</p></div>
-      <button class="btn-toggle-form" id="btnToggleForm">+ 新增</button>
+      <div class="dashboard-stats"><h1>待買清單</h1><p id="statsText">0 項 ｜ NT$ 0</p></div>
+      <button class="btn-toggle-form" id="btnToggleForm">+ 新增商品</button>
     </div>
+
     <div class="form-panel" id="formPanel">
+      <h2 id="formTitle">新增商品</h2>
       <form id="addItemForm">
         <div class="form-grid">
-          <div style="grid-column:1/-1"><label>圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
-          <div><label>品名</label><input type="text" id="itemName" required style="width:90%"></div>
-          <div><label>價格</label><input type="number" id="itemPrice" required style="width:90%"></div>
-          <button type="submit" id="btnSubmit" style="grid-column:1/-1;padding:10px;">儲存</button>
+          <div class="form-group"><label>圖片</label><input type="file" id="itemImageFile" accept="image/*"></div>
+          <div class="form-group"><label>品名</label><input type="text" id="itemName" required></div>
+          <div class="form-group"><label>成員</label>
+            <select id="itemMember"><option value="🍇">🍇</option><option value="🫐">🫐</option><option value="🍭">🍭</option></select>
+          </div>
+          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" required></div>
+          <div class="form-group"><label>優先</label>
+            <select id="itemPriority"><option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option></select>
+          </div>
+          <div class="form-group"><label>連結</label><input type="url" id="itemLink" placeholder="https://..."></div>
+          <button type="submit" class="btn-submit" id="btnSubmit">儲存</button>
         </div>
       </form>
     </div>
@@ -49,57 +92,164 @@
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/lbfdjay316stk';
-    let allItems = [];
+    const form = document.getElementById('addItemForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const listPanel = document.getElementById('listPanel');
+    const formPanel = document.getElementById('formPanel');
+    const btnToggleForm = document.getElementById('btnToggleForm');
+    const statsText = document.getElementById('statsText');
+    const fileInput = document.getElementById('itemImageFile');
+    
+    let currentBase64Image = '';
+    let editingId = null;
+    let allItems = []; 
+
+    btnToggleForm.addEventListener('click', () => {
+      const isActive = formPanel.classList.contains('active');
+      if (isActive) {
+        formPanel.classList.remove('active');
+        btnToggleForm.innerText = '+ 新增商品';
+      } else {
+        formPanel.classList.add('active');
+        btnToggleForm.innerText = '- 收起表單';
+      }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 400;
+          let w = img.width, h = img.height;
+          if (w > MAX_SIZE || h > MAX_SIZE) {
+            if (w > h) { h *= MAX_SIZE / w; w = MAX_SIZE; } else { w *= MAX_SIZE / h; h = MAX_SIZE; }
+          }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          currentBase64Image = canvas.toDataURL('image/jpeg', 0.5);
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    const formatPrice = (p) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(p);
 
     async function fetchData() {
-      const res = await fetch(API_URL);
-      allItems = await res.json();
-      renderList(allItems);
+      try {
+        const res = await fetch(API_URL);
+        allItems = await res.json();
+        renderList(allItems);
+      } catch(e) { console.error(e); }
     }
 
     function renderList(list) {
-      const panel = document.getElementById('listPanel');
-      panel.innerHTML = '';
-      document.getElementById('statsText').innerText = `${list.length} 項`;
+      listPanel.innerHTML = '';
+      const total = list.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      statsText.innerText = `${list.length} 項 ｜ ${formatPrice(total)}`;
+      
       list.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item-card';
-        div.innerHTML = `
+        const pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
+        const pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.setAttribute('data-id', item.id);
+        card.innerHTML = `
+          <button class="btn-edit-dots" onclick="openEditForm('${item.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
+          <span class="tag ${pClass}">優先：${pText}</span>
           <img src="${item.image}" class="item-image" draggable="false">
-          <div style="font-weight:bold;margin-top:5px;">${item.name}</div>
-          <div>$${item.price}</div>
-          <button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button>
+          <div class="member-tag">${item.member || ''}</div>
+          <h3 class="item-title">${item.name}</h3>
+          <div class="item-price">${formatPrice(item.price)}</div>
+          <div class="item-actions">
+            ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '<div></div>'}
+            <button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button>
+          </div>
         `;
-        panel.appendChild(div);
+        listPanel.appendChild(card);
       });
     }
 
-    // 🚨 終極刪除法：使用 query 查詢式刪除，這是 SheetDB 最穩定的刪除方式
-    window.deleteItem = async function(id) {
-      if(!confirm('確認刪除？')) return;
-      try {
-        // 直接呼叫 API 刪除，並配合 query 參數指定要刪除的 ID
-        await fetch(`${API_URL}/delete?id=${id}`, { method: 'DELETE' });
-        allItems = allItems.filter(i => String(i.id) !== String(id));
-        renderList(allItems);
-      } catch(e) { alert('刪除失敗，請確認網路或 API 設定'); }
+    window.openEditForm = function(id) {
+      const item = allItems.find(i => String(i.id) === String(id));
+      if(!item) return;
+      editingId = id;
+      document.getElementById('itemName').value = item.name;
+      document.getElementById('itemPrice').value = item.price;
+      document.getElementById('itemPriority').value = item.priority;
+      document.getElementById('itemLink').value = (item.link === 'undefined' || item.link === 'null') ? '' : item.link;
+      document.getElementById('itemMember').value = item.member || '🍇';
+      document.getElementById('formTitle').innerText = "編輯商品";
+      formPanel.classList.add('active');
+      btnToggleForm.innerText = '- 收起表單';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('itemName').value;
-      const price = document.getElementById('itemPrice').value;
-      const newItem = { id: Date.now(), name, price, image: "https://via.placeholder.com/150" };
-      await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [newItem] }) });
-      allItems.push(newItem);
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = "儲存中...";
+      const payload = {
+        member: document.getElementById('itemMember').value,
+        name: document.getElementById('itemName').value,
+        price: document.getElementById('itemPrice').value,
+        priority: document.getElementById('itemPriority').value,
+        link: document.getElementById('itemLink').value,
+        ...(currentBase64Image && { image: currentBase64Image })
+      };
+
+      try {
+        if (editingId) {
+          await fetch(`${API_URL}/id/${editingId}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+          const idx = allItems.findIndex(i => String(i.id) === String(editingId));
+          if(idx > -1) allItems[idx] = { ...allItems[idx], ...payload };
+        } else {
+          const newItem = { ...payload, id: Date.now() };
+          await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [newItem] }) });
+          allItems.push(newItem);
+        }
+      } catch(err) { console.error(err); }
+      form.reset();
+      currentBase64Image = '';
+      editingId = null;
+      formPanel.classList.remove('active');
+      btnToggleForm.innerText = '+ 新增商品';
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = "儲存";
       renderList(allItems);
-      document.getElementById('formPanel').classList.remove('active');
     });
 
-    document.getElementById('btnToggleForm').onclick = () => document.getElementById('formPanel').classList.toggle('active');
+    // 🚨 強化版刪除：強制轉換 ID 為字串比對，並確保立刻渲染
+    window.deleteItem = async function(id) {
+      if(!confirm('確定刪除這個項目嗎？')) return;
+      try {
+        await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
+        allItems = allItems.filter(i => String(i.id) !== String(id));
+        renderList(allItems);
+      } catch(err) { console.error("刪除失敗", err); }
+    }
+
+    new Sortable(listPanel, {
+      handle: '.item-image',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5,
+      fallbackTolerance: 5,   
+      onEnd: function () {
+        const ids = Array.from(listPanel.querySelectorAll('.item-card')).map(c => String(c.dataset.id));
+        allItems = ids.map(id => allItems.find(i => String(i.id) === id)).filter(Boolean);
+      }
+    });
+
     fetchData();
   </script>
 </body>
 </html>
-
-
