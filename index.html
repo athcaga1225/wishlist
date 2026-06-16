@@ -139,13 +139,20 @@
 
     const formatPrice = (p) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(p);
 
-    async function fetchData() {
-      try {
-        const res = await fetch(API_URL);
-        allItems = await res.json();
-        renderList(allItems);
-      } catch(e) { console.error(e); }
-    }
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL);
+    allItems = await res.json();
+
+    allItems.sort((a, b) =>
+      Number(a.sort || 9999) - Number(b.sort || 9999)
+    );
+
+    renderList(allItems);
+  } catch(e) {
+    console.error(e);
+  }
+}
 
     function renderList(list) {
       listPanel.innerHTML = '';
@@ -212,7 +219,11 @@
           const idx = allItems.findIndex(i => String(i.id) === String(editingId));
           if(idx > -1) allItems[idx] = { ...allItems[idx], ...payload };
         } else {
-          const newItem = { ...payload, id: Date.now() };
+const newItem = {
+  ...payload,
+  id: Date.now(),
+  sort: allItems.length + 1
+};
           await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [newItem] }) });
           allItems.push(newItem);
         }
@@ -237,17 +248,50 @@
       } catch(err) { console.error("刪除失敗", err); }
     }
 
-    new Sortable(listPanel, {
-      handle: '.item-image',
-      animation: 150,
-      ghostClass: 'sortable-ghost',
-      delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5,
-      fallbackTolerance: 5,   
-      onEnd: function () {
-        const ids = Array.from(listPanel.querySelectorAll('.item-card')).map(c => String(c.dataset.id));
-        allItems = ids.map(id => allItems.find(i => String(i.id) === id)).filter(Boolean);
-      }
-    });
+new Sortable(listPanel, {
+  handle: '.item-image',
+  animation: 150,
+  ghostClass: 'sortable-ghost',
+  delay: 200,
+  delayOnTouchOnly: true,
+  touchStartThreshold: 5,
+  fallbackTolerance: 5,
+
+  onEnd: async function () {
+
+    const ids = Array.from(
+      listPanel.querySelectorAll('.item-card')
+    ).map(c => String(c.dataset.id));
+
+    allItems = ids.map(id =>
+      allItems.find(i => String(i.id) === id)
+    ).filter(Boolean);
+
+    try {
+
+      await Promise.all(
+        allItems.map((item, index) =>
+          fetch(`${API_URL}/id/${item.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              data: {
+                sort: index + 1
+              }
+            })
+          })
+        )
+      );
+
+      console.log('排序已儲存');
+
+    } catch(err) {
+      console.error('排序儲存失敗', err);
+    }
+  }
+});
 
     fetchData();
   </script>
