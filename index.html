@@ -30,6 +30,9 @@
     input { padding: 8px; background-color: #f2f2f2; border: none; font-size: 14px; border-radius: 4px; }
     select { padding: 8px; background-color: #f2f2f2; border: none; font-size: 14px; border-radius: 4px; cursor: pointer; }
     
+    /* 隱藏區塊用的 class */
+    .hidden { display: none !important; }
+
     @keyframes spin { 100% { transform: rotate(360deg); } }
     .btn-submit { display: flex; justify-content: center; align-items: center; background: var(--twice-gradient); font-size: 14px; color: #FFFFFF; border: none; padding: 12px; font-weight: bold; border-radius: 4px; grid-column: 1 / -1; cursor: pointer;}
     .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -56,6 +59,7 @@
     .member-tag { font-size: 16px; margin-bottom: 2px; }
     .item-title { font-size: 16px; font-weight: bold; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
     .item-price { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+    .item-price.out-of-stock { color: var(--priority-high); font-size: 14px; }
     .item-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 8px; border-top: 1px solid #f2f2f2; }
     .btn-link { background-color: var(--twice-magenta); color: #FFFFFF; text-decoration: none; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; white-space: nowrap; }
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; text-decoration: underline; flex-shrink: 0; }
@@ -78,11 +82,15 @@
           <div class="form-group"><label>成員</label>
             <select id="itemMember"><option value="🍇">🍇</option><option value="🫐">🫐</option><option value="🍭">🍭</option></select>
           </div>
-          <div class="form-group"><label>價格</label><input type="number" id="itemPrice" required></div>
           <div class="form-group"><label>優先</label>
             <select id="itemPriority"><option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option></select>
           </div>
-          <div class="form-group"><label>連結</label><input type="url" id="itemLink" placeholder="https://..."></div>
+          <div class="form-group"><label>庫存狀態</label>
+            <select id="itemStock"><option value="in_stock" selected>有庫存</option><option value="out_of_stock">無庫存</option></select>
+          </div>
+          <div class="form-group" id="groupPrice"><label>價格</label><input type="number" id="itemPrice" required></div>
+          <div class="form-group" id="groupLink"><label>連結</label><input type="url" id="itemLink" placeholder="https://..."></div>
+          
           <button type="submit" class="btn-submit" id="btnSubmit">儲存</button>
         </div>
       </form>
@@ -100,9 +108,28 @@
     const statsText = document.getElementById('statsText');
     const fileInput = document.getElementById('itemImageFile');
     
+    // 取得新的欄位 DOM
+    const itemStock = document.getElementById('itemStock');
+    const groupPrice = document.getElementById('groupPrice');
+    const groupLink = document.getElementById('groupLink');
+    const itemPrice = document.getElementById('itemPrice');
+    
     let currentBase64Image = '';
     let editingId = null;
     let allItems = []; 
+
+    // 庫存選項變更時的處理邏輯
+    itemStock.addEventListener('change', (e) => {
+      if (e.target.value === 'out_of_stock') {
+        groupPrice.classList.add('hidden');
+        groupLink.classList.add('hidden');
+        itemPrice.removeAttribute('required'); // 取消必填，否則表單會報錯
+      } else {
+        groupPrice.classList.remove('hidden');
+        groupLink.classList.remove('hidden');
+        itemPrice.setAttribute('required', 'true');
+      }
+    });
 
     btnToggleForm.addEventListener('click', () => {
       const isActive = formPanel.classList.contains('active');
@@ -139,29 +166,37 @@
 
     const formatPrice = (p) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(p);
 
-async function fetchData() {
-  try {
-    const res = await fetch(API_URL);
-    allItems = await res.json();
-
-    allItems.sort((a, b) =>
-      Number(a.sort || 9999) - Number(b.sort || 9999)
-    );
-
-    renderList(allItems);
-  } catch(e) {
-    console.error(e);
-  }
-}
+    async function fetchData() {
+      try {
+        const res = await fetch(API_URL);
+        allItems = await res.json();
+        allItems.sort((a, b) => Number(a.sort || 9999) - Number(b.sort || 9999));
+        renderList(allItems);
+      } catch(e) {
+        console.error(e);
+      }
+    }
 
     function renderList(list) {
       listPanel.innerHTML = '';
-      const total = list.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      
+      // 計算總價時，若無庫存則價格視為 0
+      const total = list.reduce((sum, item) => {
+        if (item.stock === 'out_of_stock') return sum;
+        return sum + Number(item.price || 0);
+      }, 0);
       statsText.innerText = `${list.length} 項 ｜ ${formatPrice(total)}`;
       
       list.forEach(item => {
         const pClass = item.priority === 'high' ? 'tag-high' : item.priority === 'medium' ? 'tag-medium' : 'tag-low';
         const pText = item.priority === 'high' ? '高' : item.priority === 'medium' ? '中' : '低';
+        
+        const isOutOfStock = item.stock === 'out_of_stock';
+        const priceDisplay = isOutOfStock ? `<div class="item-price out-of-stock">缺貨中</div>` : `<div class="item-price">${formatPrice(item.price)}</div>`;
+        const linkHTML = (!isOutOfStock && item.link && item.link !== 'undefined' && item.link !== 'null') 
+                          ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` 
+                          : '<div></div>';
+
         const card = document.createElement('div');
         card.className = 'item-card';
         card.setAttribute('data-id', item.id);
@@ -175,9 +210,9 @@ async function fetchData() {
           <img src="${item.image}" class="item-image" draggable="false">
           <div class="member-tag">${item.member || ''}</div>
           <h3 class="item-title">${item.name}</h3>
-          <div class="item-price">${formatPrice(item.price)}</div>
+          ${priceDisplay}
           <div class="item-actions">
-            ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">前往通路</a>` : '<div></div>'}
+            ${linkHTML}
             <button class="btn-delete" onclick="deleteItem('${item.id}')">刪除</button>
           </div>
         `;
@@ -194,6 +229,11 @@ async function fetchData() {
       document.getElementById('itemPriority').value = item.priority;
       document.getElementById('itemLink').value = (item.link === 'undefined' || item.link === 'null') ? '' : item.link;
       document.getElementById('itemMember').value = item.member || '🍇';
+      
+      // 讀取庫存狀態並觸發 UI 變更
+      document.getElementById('itemStock').value = item.stock || 'in_stock';
+      document.getElementById('itemStock').dispatchEvent(new Event('change'));
+
       document.getElementById('formTitle').innerText = "編輯商品";
       formPanel.classList.add('active');
       btnToggleForm.innerText = '- 收起表單';
@@ -204,12 +244,14 @@ async function fetchData() {
       e.preventDefault();
       btnSubmit.disabled = true;
       btnSubmit.innerText = "儲存中...";
+      
       const payload = {
         member: document.getElementById('itemMember').value,
         name: document.getElementById('itemName').value,
-        price: document.getElementById('itemPrice').value,
+        price: document.getElementById('itemStock').value === 'out_of_stock' ? 0 : document.getElementById('itemPrice').value,
         priority: document.getElementById('itemPriority').value,
-        link: document.getElementById('itemLink').value,
+        stock: document.getElementById('itemStock').value,
+        link: document.getElementById('itemStock').value === 'out_of_stock' ? '' : document.getElementById('itemLink').value,
         ...(currentBase64Image && { image: currentBase64Image })
       };
 
@@ -219,16 +261,16 @@ async function fetchData() {
           const idx = allItems.findIndex(i => String(i.id) === String(editingId));
           if(idx > -1) allItems[idx] = { ...allItems[idx], ...payload };
         } else {
-const newItem = {
-  ...payload,
-  id: Date.now(),
-  sort: allItems.length + 1
-};
+          const newItem = { ...payload, id: Date.now(), sort: allItems.length + 1 };
           await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [newItem] }) });
           allItems.push(newItem);
         }
       } catch(err) { console.error(err); }
+      
       form.reset();
+      // 重置表單後，將庫存選單預設為顯示狀態
+      itemStock.dispatchEvent(new Event('change'));
+      
       currentBase64Image = '';
       editingId = null;
       formPanel.classList.remove('active');
@@ -238,7 +280,6 @@ const newItem = {
       renderList(allItems);
     });
 
-    // 🚨 強化版刪除：強制轉換 ID 為字串比對，並確保立刻渲染
     window.deleteItem = async function(id) {
       if(!confirm('確定刪除這個項目嗎？')) return;
       try {
@@ -248,50 +289,35 @@ const newItem = {
       } catch(err) { console.error("刪除失敗", err); }
     }
 
-new Sortable(listPanel, {
-  handle: '.item-image',
-  animation: 150,
-  ghostClass: 'sortable-ghost',
-  delay: 200,
-  delayOnTouchOnly: true,
-  touchStartThreshold: 5,
-  fallbackTolerance: 5,
+    new Sortable(listPanel, {
+      handle: '.item-image',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      delay: 200,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 5,
+      fallbackTolerance: 5,
 
-  onEnd: async function () {
+      onEnd: async function () {
+        const ids = Array.from(listPanel.querySelectorAll('.item-card')).map(c => String(c.dataset.id));
+        allItems = ids.map(id => allItems.find(i => String(i.id) === id)).filter(Boolean);
 
-    const ids = Array.from(
-      listPanel.querySelectorAll('.item-card')
-    ).map(c => String(c.dataset.id));
-
-    allItems = ids.map(id =>
-      allItems.find(i => String(i.id) === id)
-    ).filter(Boolean);
-
-    try {
-
-      await Promise.all(
-        allItems.map((item, index) =>
-          fetch(`${API_URL}/id/${item.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              data: {
-                sort: index + 1
-              }
-            })
-          })
-        )
-      );
-
-      console.log('排序已儲存');
-
-    } catch(err) {
-      console.error('排序儲存失敗', err);
-    }
-  }
-});
+        try {
+          await Promise.all(
+            allItems.map((item, index) =>
+              fetch(`${API_URL}/id/${item.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { sort: index + 1 } })
+              })
+            )
+          );
+          console.log('排序已儲存');
+        } catch(err) {
+          console.error('排序儲存失敗', err);
+        }
+      }
+    });
 
     fetchData();
   </script>
